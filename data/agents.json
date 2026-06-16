@@ -34,5 +34,17 @@
     "model": "lama3.1",
     "version": "v1",
     "createdAt": "2026-06-16T18:57:28.091Z"
+  },
+  "dvsdvd|48a5d27b-a45b-49b7-8d8e-751b52bd9017|vvf": {
+    "id": "48a5d27b-a45b-49b7-8d8e-751b52bd9017",
+    "agentName": "dvsdvd",
+    "description": "vdvdvf",
+    "tags": [
+      "vvdf"
+    ],
+    "provider": "Anthropic",
+    "model": "claude-sonnet-4-6",
+    "version": "vvf",
+    "createdAt": "2026-06-16T20:00:53.999Z"
   }
 }
