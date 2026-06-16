@@ -1,0 +1,26 @@
+{
+  "testAgent|0585408e-208a-416f-a4ab-9dc97c1f57a9|v1": {
+    "id": "0585408e-208a-416f-a4ab-9dc97c1f57a9",
+    "agentName": "testAgent",
+    "description": "test desc",
+    "tags": [
+      "test"
+    ],
+    "provider": "OpenAI",
+    "model": "gpt-5",
+    "version": "v1",
+    "createdAt": "2026-06-16T15:31:39.957Z"
+  },
+  "testAgent|0585408e-208a-416f-a47b-9dc97c1f57a9|v2": {
+    "id": "0585408e-208a-416f-a4ab-9dc97c1f57a9",
+    "agentName": "testAgent",
+    "description": "test desc",
+    "tags": [
+      "test"
+    ],
+    "provider": "OpenAI",
+    "model": "gpt-5",
+    "version": "v1",
+    "createdAt": "2026-06-16T15:31:39.957Z"
+  }
+}
