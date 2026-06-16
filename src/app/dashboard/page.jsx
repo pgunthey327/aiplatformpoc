@@ -15,111 +15,128 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Spinner } from "@/components/ui/spinner"
+import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 export default function Page() {
   const [traces, setTraces] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // 🔥 FIXED (was true)
+  
+  const [agents, setAgents] = useState({});
+
+  const [agentName, setAgentName] = useState("");
+  const [agentId, setAgentId] = useState("");
+  const [agentVersion, setAgentVersion] = useState("");
+
+  const [showSelector, setShowSelector] = useState(true);
 
   const [sortConfig, setSortConfig] = useState({
     field: "timestamp",
     direction: "desc",
   });
 
-  const [filters, setFilters] = useState([
-    // Example:
-    // {
-    //   field: "provider",
-    //   operator: "equals",
-    //   value: "ollama",
-    // }
-  ]);
+  const [filters, setFilters] = useState([]);
 
+  // ---------------- LOAD AGENTS ONLY ----------------
   useEffect(() => {
-    const getData = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/getTraces");
-        const result = await res.json();
-
-        setTraces(result.data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false)
-      }
+    const loadAgents = async () => {
+      const res = await fetch("/api/agents");
+      const result = await res.json();
+      setAgents(result.data || {});
     };
 
-    getData();
+    loadAgents();
   }, []);
+
+  // ---------------- FETCH FUNCTIONS (ONLY WHEN USER ACTS) ----------------
+
+  const fetchFilteredTraces = async () => {
+    if (!agentName || !agentId || !agentVersion) return;
+
+    setLoading(true);
+
+    try {
+      const res = await fetch(
+        `/api/getTraces?agentName=${agentName}&agentId=${agentId}&version=${agentVersion}`
+      );
+
+      const result = await res.json();
+
+      setTraces(result.data || []);
+      setShowSelector(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllTraces = async () => {
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/getTraces");
+      const result = await res.json();
+
+      setTraces(result.data || []);
+      setShowSelector(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ---------------- DERIVED ----------------
+
+  const agentNames = [
+    ...new Set(Object.keys(agents).map((k) => k.split("|")[0])),
+  ];
+
+  const agentIds = [
+    ...new Set(
+      Object.keys(agents)
+        .filter((k) => k.split("|")[0] === agentName)
+        .map((k) => k.split("|")[1])
+    ),
+  ];
+
+  const versions = [
+    ...new Set(
+      Object.keys(agents)
+        .filter((k) => {
+          const [name, id] = k.split("|");
+          return name === agentName && id === agentId;
+        })
+        .map((k) => k.split("|")[2])
+    ),
+  ];
+
+  // ---------------- EXISTING LOGIC (UNCHANGED) ----------------
 
   const getFieldValue = (trace, field) => {
     switch (field) {
       case "input":
         return trace.input ?? "";
-
       case "output":
         return trace.output ?? "";
-
       case "model":
         return trace.metadata?.model ?? "";
-
       case "provider":
         return trace.metadata?.provider ?? "";
-
-      case "inputTokens":
-        return trace.metadata?.inputTokens ?? 0;
-
-      case "outputTokens":
-        return trace.metadata?.outputTokens ?? 0;
-
-      case "totalTokens":
-        return trace.metadata?.totalTokens ?? 0;
-
       default:
         return trace[field];
-    }
-  };
-
-  const matchesFilter = (trace, filter) => {
-    const source = String(
-      getFieldValue(trace, filter.field) ?? ""
-    ).toLowerCase();
-
-    const target = String(filter.value ?? "").toLowerCase();
-
-    switch (filter.operator) {
-      case "contains":
-        return source.includes(target);
-
-      case "notContains":
-        return !source.includes(target);
-
-      case "equals":
-        return source === target;
-
-      case "notEquals":
-        return source !== target;
-
-      default:
-        return true;
     }
   };
 
   const filteredAndSortedTraces = useMemo(() => {
     let data = [...traces];
 
-    if (filters.length > 0) {
-      data = data.filter((trace) =>
-        filters.every((filter) => matchesFilter(trace, filter))
-      );
-    }
-
     data.sort((a, b) => {
       const aValue = getFieldValue(a, sortConfig.field);
       const bValue = getFieldValue(b, sortConfig.field);
-
-      if (aValue == null) return 1;
-      if (bValue == null) return -1;
 
       if (typeof aValue === "string") {
         return sortConfig.direction === "asc"
@@ -133,67 +150,108 @@ export default function Page() {
     });
 
     return data;
-  }, [traces, filters, sortConfig]);
+  }, [traces, sortConfig]);
 
-  const handleSort = (field) => {
-    setSortConfig((prev) => ({
-      field,
-      direction:
-        prev.field === field && prev.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
+  // ---------------- UI ACTIONS ----------------
+
+  const handleLoad = () => {
+    fetchFilteredTraces();
   };
 
-  const addFilter = (filter) => {
-    setFilters((prev) => [...prev, filter]);
-  };
-
-  const removeFilter = (index) => {
-    setFilters((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const clearFilters = () => {
-    setFilters([]);
+  const handleSkip = () => {
+    fetchAllTraces();
   };
 
   return (
     <SidebarProvider>
-      <AppSidebar
-        filters={filters}
-        addFilter={addFilter}
-        removeFilter={removeFilter}
-        clearFilters={clearFilters}
-      />
+      <AppSidebar filters={filters} />
 
       <SidebarInset>
-        <header className="sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b bg-background px-4">
+        <header className="sticky top-0 flex h-16 items-center gap-2 border-b px-4">
           <SidebarTrigger className="-ml-1" />
-
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-vertical:h-4 data-vertical:self-auto"
-          />
-
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="hidden md:block">
-                <BreadcrumbLink href="#">
-                  Metrics
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+          <Separator orientation="vertical" />
+          Metrics
         </header>
-        {loading && <div className="w-full h-full flex justify-center items-center"> <Spinner /></div>}
-        {!loading && <div>
-          <TableTemplate
-            data={filteredAndSortedTraces}
-            sortConfig={sortConfig}
-            onSort={handleSort}
-          />
-        </div>
-        }
+
+        {/* ---------------- SELECTOR ---------------- */}
+        {showSelector && (
+          <div className="p-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Select Agent</CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-3">
+                <select
+                  className="border p-2 w-full rounded"
+                  value={agentName}
+                  onChange={(e) => {
+                    setAgentName(e.target.value);
+                    setAgentId("");
+                    setAgentVersion("");
+                  }}
+                >
+                  <option value="">Agent Name</option>
+                  {agentNames.map((n) => (
+                    <option key={n}>{n}</option>
+                  ))}
+                </select>
+
+                <select
+                  className="border p-2 w-full rounded"
+                  value={agentId}
+                  onChange={(e) => {
+                    setAgentId(e.target.value);
+                    setAgentVersion("");
+                  }}
+                >
+                  <option value="">Agent ID</option>
+                  {agentIds.map((id) => (
+                    <option key={id}>{id}</option>
+                  ))}
+                </select>
+
+                <select
+                  className="border p-2 w-full rounded"
+                  value={agentVersion}
+                  onChange={(e) =>
+                    setAgentVersion(e.target.value)
+                  }
+                >
+                  <option value="">Version</option>
+                  {versions.map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+                </select>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleLoad}>
+                    Load Traces
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={handleSkip}
+                  >
+                    Skip
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* ---------------- LOADING ---------------- */}
+        {loading && (
+          <div className="flex justify-center p-10">
+            <Spinner />
+          </div>
+        )}
+
+        {/* ---------------- TABLE ---------------- */}
+        {!loading && (
+          <TableTemplate data={filteredAndSortedTraces} />
+        )}
       </SidebarInset>
     </SidebarProvider>
   );

@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(cd /d \"d:\\\\Playground\\\\aiplatformpoc\")",
-      "Bash(Get-ChildItem -Force)"
-    ]
-  }
-}
