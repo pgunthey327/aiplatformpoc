@@ -21,6 +21,22 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const PROVIDER_MODELS = {
+  OpenAI: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
+  Anthropic: ["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5", "claude-3-5-sonnet-20241022"],
+  Google: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+  Ollama: ["llama3.1", "llama3", "mistral", "codellama", "phi3", "qwen2"],
+  Mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "mixtral-8x7b"],
+  Cohere: ["command-r-plus", "command-r", "command-light"],
+};
 
 import {
   Dialog,
@@ -49,6 +65,14 @@ export default function Page() {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
+    }));
+  };
+
+  const handleSelectChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+      ...(field === "provider" ? { model: "" } : {}),
     }));
   };
 
@@ -142,7 +166,7 @@ export default function Page() {
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-3xl font-bold">
-                Create AI Agent
+                Register AI Agent
               </CardTitle>
 
               <CardDescription>
@@ -195,14 +219,20 @@ export default function Page() {
                       Provider
                     </Label>
 
-                    <Input
-                      name="provider"
-                      placeholder="OpenAI"
+                    <Select
                       value={formData.provider}
-                      onChange={handleChange}
+                      onValueChange={(val) => handleSelectChange("provider", val)}
                       required
-                      className="h-12"
-                    />
+                    >
+                      <SelectTrigger className="h-12 w-full">
+                        <SelectValue placeholder="Select a provider" />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        {Object.keys(PROVIDER_MODELS).map((p) => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-3">
@@ -211,14 +241,21 @@ export default function Page() {
                       Model
                     </Label>
 
-                    <Input
-                      name="model"
-                      placeholder="gpt-5"
+                    <Select
                       value={formData.model}
-                      onChange={handleChange}
+                      onValueChange={(val) => handleSelectChange("model", val)}
+                      disabled={!formData.provider}
                       required
-                      className="h-12"
-                    />
+                    >
+                      <SelectTrigger className="h-12 w-full">
+                        <SelectValue placeholder={formData.provider ? "Select a model" : "Select a provider first"} />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        {(PROVIDER_MODELS[formData.provider] ?? []).map((m) => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-3 md:col-span-2">
@@ -252,47 +289,7 @@ export default function Page() {
                   </div>
                 </div>
 
-                <Card className="bg-muted/50">
-                  <CardHeader>
-                    <CardTitle className="text-lg">
-                      Configuration Preview
-                    </CardTitle>
-                  </CardHeader>
-
-                  <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Agent Name
-                        </p>
-                        <p>{formData.agentName || "-"}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Version
-                        </p>
-                        <p>{formData.version || "-"}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Provider
-                        </p>
-                        <p>{formData.provider || "-"}</p>
-                      </div>
-
-                      <div>
-                        <p className="text-sm text-muted-foreground">
-                          Model
-                        </p>
-                        <p>{formData.model || "-"}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <div className="flex justify-end">
+<div className="flex justify-end">
                   <Button
                     type="submit"
                     disabled={loading}
