@@ -22,5 +22,17 @@
     "model": "gpt-5",
     "version": "v1",
     "createdAt": "2026-06-16T15:31:39.957Z"
+  },
+  "test|690ae98b-44f9-4ee8-afe9-3c20c5aaf5ba|v1": {
+    "id": "690ae98b-44f9-4ee8-afe9-3c20c5aaf5ba",
+    "agentName": "test",
+    "description": "vfdfvdf",
+    "tags": [
+      "vdf"
+    ],
+    "provider": "Ollama",
+    "model": "lama3.1",
+    "version": "v1",
+    "createdAt": "2026-06-16T18:57:28.091Z"
   }
 }
