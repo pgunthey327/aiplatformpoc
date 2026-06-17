@@ -13,15 +13,42 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
+const PROVIDER_MODELS = {
+  OpenAI: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
+  Anthropic: ["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5", "claude-3-5-sonnet-20241022"],
+  Google: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
+  Ollama: ["llama3.1", "llama3", "mistral", "codellama", "phi3", "qwen2"],
+  Mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "mixtral-8x7b"],
+  Cohere: ["command-r-plus", "command-r", "command-light"],
+};
+
 export default function Page() {
   const [prompt, setPrompt] = useState("");
+  const [agentJson, setAgentJson] = useState("");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [model, setModel] = useState("llama3.1");
+  const [provider, setProvider] = useState("");
+  const [model, setModel] = useState("");
+
+  const handleProviderChange = (val) => {
+    setProvider(val);
+    setModel("");
+  };
 
   const handleSubmit = async () => {
     if (!prompt.trim()) return;
+
+    let agentConfig = null;
+
+    if (agentJson.trim()) {
+      try {
+        agentConfig = JSON.parse(agentJson);
+      } catch {
+        setResponse("Invalid config, please correct agentConfig");
+        return;
+      }
+    }
 
     try {
       setLoading(true);
@@ -33,7 +60,9 @@ export default function Page() {
         },
         body: JSON.stringify({
           prompt,
+          provider,
           model,
+          agentConfig,
         }),
       });
 
@@ -52,28 +81,75 @@ export default function Page() {
     <div className="w-full px-8 py-6">
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">
-          Ollama Chat
+          Test Your Agent
         </h1>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Provider
+            </label>
+
+            <Select
+              value={provider}
+              onValueChange={handleProviderChange}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a provider" />
+              </SelectTrigger>
+
+              <SelectContent position="popper">
+                {Object.keys(PROVIDER_MODELS).map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Model
+            </label>
+
+            <Select
+              value={model}
+              onValueChange={setModel}
+              disabled={!provider}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue
+                  placeholder={
+                    provider
+                      ? "Select a model"
+                      : "Select a provider first"
+                  }
+                />
+              </SelectTrigger>
+
+              <SelectContent position="popper">
+                {(PROVIDER_MODELS[provider] ?? []).map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            Model
+            Agent Config (JSON)
           </label>
 
-          <Select
-            value={model}
-            onValueChange={setModel}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Model" />
-            </SelectTrigger>
-
-            <SelectContent>
-              <SelectItem value="llama3.1">
-                llama3.1
-              </SelectItem>
-            </SelectContent>
-          </Select>
+          <Textarea
+            className="w-full min-h-35 font-mono text-sm"
+            placeholder='Paste the agent config JSON copied from Register Agent, e.g. { "id": "...", "agentName": "...", "version": "...", "provider": "...", "model": "..." }'
+            value={agentJson}
+            onChange={(e) => setAgentJson(e.target.value)}
+          />
         </div>
 
         <div className="space-y-2">

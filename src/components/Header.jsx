@@ -13,6 +13,7 @@ export default function Header() {
             { label: "Home", href: "/" },
             { label: "Dashboard", href: "/dashboard" },
             { label: "Register Agent", href: "/registerAgent" },
+            { label: "Validate Agent", href: "/chat" },
           ].map(({ label, href }) => (
             <Link
               key={href}
