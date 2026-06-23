@@ -8,14 +8,29 @@ const langfuse = new Langfuse({
 });
 
 export async function POST(req) {
-  const { prompt } = await req.json();
+  const {
+    prompt,
+    provider: selectedProvider,
+    model: selectedModel,
+    agentConfig,
+  } = await req.json();
+
+  const agent = agentConfig ?? {};
+  const model = selectedModel || agent.model || "llama3.1";
+  const provider = selectedProvider || agent.provider || "ollama";
+
+  const tags = [];
+  if (agent.agentName) tags.push(`agent:${agent.agentName}`);
+  if (agent.id) tags.push(`id:${agent.id}`);
+  if (agent.version) tags.push(`version:${agent.version}`);
 
   const trace = langfuse.trace({
     name: "ollama-chat",
     input: prompt,
+    tags,
     metadata: {
-      model: "llama3.1",
-      provider: "ollama",
+      model,
+      provider,
     },
   });
 
@@ -25,7 +40,7 @@ export async function POST(req) {
     const response = await axios.post(
       "http://localhost:11434/api/chat",
       {
-        model: "llama3.1",
+        model,
         messages: [{ role: "user", content: prompt }],
         stream: false,
       }
@@ -43,7 +58,7 @@ export async function POST(req) {
       endTime,
       input: prompt,
       output,
-      model: "llama3.1",
+      model,
       usage: {
         input: response.data.prompt_eval_count,
         output: response.data.eval_count,

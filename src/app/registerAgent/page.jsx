@@ -80,6 +80,7 @@ export default function Page() {
     if (!createdAgent) return;
 
     const config = {
+      id: createdAgent.id,
       agentName: createdAgent.agentName,
       version: createdAgent.version,
       provider: createdAgent.provider,
@@ -149,6 +150,7 @@ export default function Page() {
   const jsonPreview = createdAgent
     ? JSON.stringify(
         {
+          id: createdAgent.id,
           agentName: createdAgent.agentName,
           version: createdAgent.version,
           provider: createdAgent.provider,

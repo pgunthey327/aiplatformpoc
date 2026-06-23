@@ -46,5 +46,41 @@
     "model": "claude-sonnet-4-6",
     "version": "vvf",
     "createdAt": "2026-06-16T20:00:53.999Z"
+  },
+  "newtestAgent|e990be35-32d8-4e24-8f70-227083d465df|v1": {
+    "id": "e990be35-32d8-4e24-8f70-227083d465df",
+    "agentName": "newtestAgent",
+    "description": "newtestAgent this is",
+    "tags": [
+      "newtestAgent"
+    ],
+    "provider": "Ollama",
+    "model": "llama3.1",
+    "version": "v1",
+    "createdAt": "2026-06-17T08:39:06.455Z"
+  },
+  "practiceAgent|73ef78b7-c442-4e2b-b221-749ab196565e|v2": {
+    "id": "73ef78b7-c442-4e2b-b221-749ab196565e",
+    "agentName": "practiceAgent",
+    "description": "this is practiceAgent",
+    "tags": [
+      "practiceAgent"
+    ],
+    "provider": "Ollama",
+    "model": "llama3.1",
+    "version": "v2",
+    "createdAt": "2026-06-17T08:47:22.408Z"
+  },
+  "myagent|f5b5e7b0-1b12-4817-9247-28e328948017|v3": {
+    "id": "f5b5e7b0-1b12-4817-9247-28e328948017",
+    "agentName": "myagent",
+    "description": "this is myagent",
+    "tags": [
+      "myagent"
+    ],
+    "provider": "Ollama",
+    "model": "llama3.1",
+    "version": "v3",
+    "createdAt": "2026-06-17T09:10:45.758Z"
   }
 }
