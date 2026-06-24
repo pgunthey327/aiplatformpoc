@@ -82,5 +82,31 @@
     "model": "llama3.1",
     "version": "v3",
     "createdAt": "2026-06-17T09:10:45.758Z"
+  },
+  "AgentX|1fbd7849-5a38-4255-9176-d2358036d27e|v1.0.0": {
+    "id": "1fbd7849-5a38-4255-9176-d2358036d27e",
+    "agentName": "AgentX",
+    "description": "test agentx",
+    "tags": [
+      "test"
+    ],
+    "provider": "Ollama",
+    "model": "qwen3:0.6b",
+    "version": "v1.0.0",
+    "agentType": "code",
+    "createdAt": "2026-06-24T20:09:38.997Z"
+  },
+  "AgentY|14e030dd-f600-40a0-9764-a406e3d08ead|v1.0.0": {
+    "id": "14e030dd-f600-40a0-9764-a406e3d08ead",
+    "agentName": "AgentY",
+    "description": "test AgentY",
+    "tags": [
+      "test"
+    ],
+    "provider": "GitHub Copilot",
+    "model": "claude-3-5-sonnet",
+    "version": "v1.0.0",
+    "agentType": "markdown",
+    "createdAt": "2026-06-24T20:19:17.338Z"
   }
 }

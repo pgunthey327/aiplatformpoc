@@ -11,13 +11,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
+  extractInput,
+  extractOutput,
+  getModel,
+  getProvider,
+  getTokens,
+} from "@/lib/traceUtils";
 
 export function TableTemplate({ data = [],
   sortConfig,
@@ -111,96 +110,78 @@ export function TableTemplate({ data = [],
 
       <TableBody>
 
-        {data.map((trace) => (
-          // <Dialog key={trace.id}>
-          // <DialogTrigger asChild key={trace.id}>
-          <TableRow key={trace.id}
-            className="cursor-pointer select-none hover:bg-muted"
-            onClick={() =>
-              router.push(`/observation/${trace.observations[0]}`)
-            }>
-            <TableCell
-              className="max-w-0 truncate font-medium"
-              title={trace.input}
-            >
-              {trace.input || "-"}
-            </TableCell>
+        {data.map((trace) => {
+          const input = extractInput(trace.input);
+          const output = extractOutput(trace.output);
+          const model = getModel(trace);
+          const provider = getProvider(trace);
+          const { inputTokens, outputTokens, totalTokens } = getTokens(trace);
 
-            <TableCell
-              className="max-w-0 truncate"
-              title={trace.output}
-            >
-              {trace.output || "-"}
-            </TableCell>
+          return (
+            <TableRow key={trace.id}
+              className="cursor-pointer select-none hover:bg-muted"
+              onClick={() =>
+                router.push(`/observation/${trace.observations[0]}`)
+              }>
+              <TableCell
+                className="max-w-0 truncate font-medium"
+                title={input}
+              >
+                {input || "-"}
+              </TableCell>
 
-            <TableCell
-              className="truncate"
-              title={trace.metadata?.model}
-            >
-              {trace.metadata?.model || "-"}
-            </TableCell>
+              <TableCell
+                className="max-w-0 truncate"
+                title={output}
+              >
+                {output || "-"}
+              </TableCell>
 
-            <TableCell
-              className="hidden md:table-cell truncate"
-              title={trace.metadata?.provider}
-            >
-              {trace.metadata?.provider || "-"}
-            </TableCell>
+              <TableCell
+                className="truncate"
+                title={model}
+              >
+                {model || "-"}
+              </TableCell>
 
-            <TableCell className="hidden lg:table-cell truncate">
-              ${trace.totalCost ?? "-"}
-            </TableCell>
+              <TableCell
+                className="hidden md:table-cell truncate"
+                title={provider}
+              >
+                {provider || "-"}
+              </TableCell>
 
-            <TableCell className="hidden lg:table-cell truncate">
-              {trace.latency
-                ? `${trace.latency} ms`
-                : "-"}
-            </TableCell>
+              <TableCell className="hidden lg:table-cell truncate">
+                ${trace.totalCost ?? "-"}
+              </TableCell>
 
-            <TableCell
-              className="hidden lg:table-cell truncate"
-              title={trace.metadata?.inputTokens}
-            >
-              {trace.metadata?.inputTokens || "-"}
-            </TableCell>
-            <TableCell
-              className="hidden lg:table-cell truncate"
-              title={trace.metadata?.outputTokens}
-            >
-              {trace.metadata?.outputTokens || "-"}
-            </TableCell>
+              <TableCell className="hidden lg:table-cell truncate">
+                {trace.latency ? `${trace.latency} ms` : "-"}
+              </TableCell>
 
-            <TableCell
-              className="hidden lg:table-cell truncate"
-              title={trace.metadata?.totalTokens}
-            >
-              {trace.metadata?.totalTokens || "-"}
-            </TableCell>
-          </TableRow>
-          //   </DialogTrigger>
-          //   <DialogContent className={"w-full"}>
-          //     <DialogHeader>
-          //       <DialogTitle>Scrollable Content</DialogTitle>
-          //       <DialogDescription>
-          //         This is a dialog with scrollable content.
-          //       </DialogDescription>
-          //     </DialogHeader>
-          //     <div className="-mx-4 no-scrollbar  max-h-[50vh] overflow-y-auto px-4">
-          //       {Array.from({ length: 10 }).map((_, index) => (
-          //         <p key={index} className="mb-4 leading-normal">
-          //           Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-          //           eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-          //           enim ad minim veniam, quis nostrud exercitation ullamco laboris
-          //           nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in
-          //           reprehenderit in voluptate velit esse cillum dolore eu fugiat
-          //           nulla pariatur. Excepteur sint occaecat cupidatat non proident,
-          //           sunt in culpa qui officia deserunt mollit anim id est laborum.
-          //         </p>
-          //       ))}
-          //     </div>
-          //   </DialogContent>
-          // </Dialog>
-        ))}
+              <TableCell
+                className="hidden lg:table-cell truncate"
+                title={String(inputTokens)}
+              >
+                {inputTokens || "-"}
+              </TableCell>
+
+              <TableCell
+                className="hidden lg:table-cell truncate"
+                title={String(outputTokens)}
+              >
+                {outputTokens || "-"}
+              </TableCell>
+
+              <TableCell
+                className="hidden lg:table-cell truncate"
+                title={String(totalTokens)}
+              >
+                {totalTokens || "-"}
+              </TableCell>
+            </TableRow>
+          );
+        })}
 
       </TableBody>
     </Table>

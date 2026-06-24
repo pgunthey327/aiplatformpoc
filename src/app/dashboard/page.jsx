@@ -68,6 +68,8 @@ export default function Page() {
   const [agentVersion, setAgentVersion] = useState("");
   const [showSelector, setShowSelector] = useState(true);
   const [activeTab, setActiveTab] = useState("agent");
+  const [agentSource, setAgentSource] = useState("registered");
+  const [externalAgentName, setExternalAgentName] = useState("");
   const [sortConfig, setSortConfig] = useState({ field: "timestamp", direction: "desc" });
   const [filters, setFilters] = useState([]);
 
@@ -81,12 +83,18 @@ export default function Page() {
   }, []);
 
   const fetchFilteredTraces = async () => {
-    if (!agentName) return;
+    if (agentSource === "registered" && !agentName) return;
+    if (agentSource === "external" && !externalAgentName.trim()) return;
     setLoading(true);
     try {
-      const params = new URLSearchParams({ agentName });
-      if (agentId) params.set("agentId", agentId);
-      if (agentVersion) params.set("version", agentVersion);
+      let params;
+      if (agentSource === "external") {
+        params = new URLSearchParams({ metadataAgentName: externalAgentName.trim() });
+      } else {
+        params = new URLSearchParams({ agentName });
+        if (agentId) params.set("agentId", agentId);
+        if (agentVersion) params.set("version", agentVersion);
+      }
       const res = await fetch(`/api/getTraces?${params.toString()}`);
       const result = await res.json();
       setTraces(result.data || []);
@@ -104,8 +112,14 @@ export default function Page() {
     } finally { setLoading(false); }
   };
 
+  const handleAgentSourceChange = (source) => {
+    setAgentSource(source);
+    setAgentName(""); setAgentId(""); setAgentVersion(""); setExternalAgentName("");
+  };
+
   const handleReset = () => {
     setAgentName(""); setAgentId(""); setAgentVersion("");
+    setExternalAgentName(""); setAgentSource("registered");
     setTraces([]); setShowSelector(true); setActiveTab("agent");
   };
 
@@ -117,8 +131,15 @@ export default function Page() {
     direction: p.field === field && p.direction === "asc" ? "desc" : "asc",
   }));
 
-  // Cascading selectors
-  const agentNames = [...new Set(Object.keys(agents).map((k) => k.split("|")[0]))];
+  // Agent names filtered by agentType
+  const codeAgentNames = [...new Set(
+    Object.values(agents).filter((a) => a.agentType !== "markdown").map((a) => a.agentName)
+  )];
+  const markdownAgentNames = [...new Set(
+    Object.values(agents).filter((a) => a.agentType === "markdown").map((a) => a.agentName)
+  )];
+
+  const agentNames = agentSource === "external" ? markdownAgentNames : codeAgentNames;
   const agentIds   = [...new Set(
     Object.keys(agents).filter((k) => k.split("|")[0] === agentName).map((k) => k.split("|")[1])
   )];
@@ -244,30 +265,54 @@ export default function Page() {
           <div className="p-4">
             <Card>
               <CardHeader><CardTitle>Select Agent</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                <Select value={agentName} onValueChange={(v) => { setAgentName(v); setAgentId(""); setAgentVersion(""); }}>
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Agent Name" /></SelectTrigger>
-                  <SelectContent position="popper">
-                    {agentNames.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+              <CardContent className="space-y-4">
+                {/* Source toggle */}
+                <div className="flex gap-1 rounded-md border p-1 w-fit">
+                  {[
+                    { id: "registered", label: "Code Based Agent" },
+                    { id: "external",   label: "Markdown Based Agent" },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => handleAgentSourceChange(s.id)}
+                      className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                        agentSource === s.id
+                          ? "bg-primary text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
 
-                <Select value={agentId} onValueChange={(v) => { setAgentId(v); setAgentVersion(""); }} disabled={!agentName || agentIds.length === 0}>
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Agent ID (optional)" /></SelectTrigger>
-                  <SelectContent position="popper">
-                    {agentIds.map((id) => <SelectItem key={id} value={id}>{id}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-
-                <Select value={agentVersion} onValueChange={setAgentVersion} disabled={!agentName || versions.length === 0}>
-                  <SelectTrigger className="w-full"><SelectValue placeholder="Version (optional)" /></SelectTrigger>
-                  <SelectContent position="popper">
-                    {versions.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                {agentSource === "registered" ? (
+                  <>
+                    <Select value={agentName} onValueChange={(v) => { setAgentName(v); setAgentId(""); setAgentVersion(""); }}>
+                      <SelectTrigger className="w-full"><SelectValue placeholder="Select Code Based Agent" /></SelectTrigger>
+                      <SelectContent position="popper">
+                        {agentNames.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </>
+                ) : (
+                  <Select value={externalAgentName} onValueChange={setExternalAgentName}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Markdown Based Agent" />
+                    </SelectTrigger>
+                    <SelectContent position="popper">
+                      {agentNames.map((n) => <SelectItem key={n} value={n}>{n}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                )}
 
                 <div className="flex gap-2">
-                  <Button onClick={fetchFilteredTraces} disabled={!agentName}>Load Traces</Button>
+                  <Button
+                    onClick={fetchFilteredTraces}
+                    disabled={agentSource === "registered" ? !agentName : !externalAgentName}
+                  >
+                    Load Traces
+                  </Button>
                   <Button variant="outline" onClick={fetchAllTraces}>Show All</Button>
                 </div>
               </CardContent>

@@ -9,6 +9,7 @@ import {
   FileText,
   Copy,
   Check,
+  Code2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,9 +34,10 @@ const PROVIDER_MODELS = {
   OpenAI: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
   Anthropic: ["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5", "claude-3-5-sonnet-20241022"],
   Google: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
-  Ollama: ["llama3.1", "llama3", "mistral", "codellama", "phi3", "qwen2"],
+  Ollama: ["llama3.1", "llama3", "mistral", "codellama", "phi3", "qwen2", "qwen3:0.6b"],
   Mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "mixtral-8x7b"],
   Cohere: ["command-r-plus", "command-r", "command-light"],
+  "GitHub Copilot": ["gpt-4o", "gpt-4.1", "o3-mini", "o1", "claude-3-5-sonnet", "claude-3-7-sonnet", "gemini-2.0-flash"],
 };
 
 import {
@@ -54,6 +56,7 @@ export default function Page() {
     provider: "",
     model: "",
     version: "",
+    agentType: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -79,17 +82,10 @@ export default function Page() {
   const copyConfig = async () => {
     if (!createdAgent) return;
 
-    const config = {
-      id: createdAgent.id,
-      agentName: createdAgent.agentName,
-      version: createdAgent.version,
-      provider: createdAgent.provider,
-      model: createdAgent.model,
-    };
+    const text =
+      createdAgent.agentType === "markdown" ? markdownPreview : jsonPreview;
 
-    await navigator.clipboard.writeText(
-      JSON.stringify(config, null, 2)
-    );
+    await navigator.clipboard.writeText(text);
 
     setCopied(true);
 
@@ -124,7 +120,7 @@ export default function Page() {
 
       if (!res.ok) {
         throw new Error(
-          result.message || "Failed to create agent"
+          result.message || "Failed to register agent"
         );
       }
 
@@ -138,6 +134,7 @@ export default function Page() {
         provider: "",
         model: "",
         version: "",
+        agentType: "",
       });
     } catch (error) {
       console.error(error);
@@ -147,18 +144,22 @@ export default function Page() {
     }
   };
 
-  const jsonPreview = createdAgent
-    ? JSON.stringify(
-        {
-          id: createdAgent.id,
-          agentName: createdAgent.agentName,
-          version: createdAgent.version,
-          provider: createdAgent.provider,
-          model: createdAgent.model,
-        },
-        null,
-        2
-      )
+  const configFields = createdAgent
+    ? {
+        id: createdAgent.id,
+        agentName: createdAgent.agentName,
+        version: createdAgent.version,
+        provider: createdAgent.provider,
+        model: createdAgent.model,
+      }
+    : null;
+
+  const jsonPreview = configFields ? JSON.stringify(configFields, null, 2) : "";
+
+  const markdownPreview = configFields
+    ? Object.entries(configFields)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(",")
     : "";
 
   return (
@@ -262,6 +263,27 @@ export default function Page() {
 
                   <div className="space-y-3 md:col-span-2">
                     <Label className="flex items-center gap-2">
+                      <Code2 size={16} />
+                      Agent Type
+                    </Label>
+
+                    <Select
+                      value={formData.agentType}
+                      onValueChange={(val) => handleSelectChange("agentType", val)}
+                      required
+                    >
+                      <SelectTrigger className="h-12 w-full">
+                        <SelectValue placeholder="Select agent type" />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        <SelectItem value="code">Code Based Agent</SelectItem>
+                        <SelectItem value="markdown">Markdown Based Agent</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3 md:col-span-2">
+                    <Label className="flex items-center gap-2">
                       <FileText size={16} />
                       Description
                     </Label>
@@ -298,8 +320,8 @@ export default function Page() {
                     size="lg"
                   >
                     {loading
-                      ? "Creating Agent..."
-                      : "Create Agent"}
+                      ? "Registering Agent..."
+                      : "Register Agent"}
                   </Button>
                 </div>
               </form>
@@ -374,14 +396,14 @@ export default function Page() {
                     ) : (
                       <>
                         <Copy className="mr-2 h-4 w-4" />
-                        Copy JSON
+                        {createdAgent?.agentType === "markdown" ? "Copy String" : "Copy JSON"}
                       </>
                     )}
                   </Button>
                 </div>
 
-                <pre className="rounded-lg border bg-muted p-4 overflow-auto text-sm">
-{jsonPreview}
+                <pre className="rounded-lg border bg-muted p-4 overflow-auto text-sm max-h-48 whitespace-pre-wrap break-all">
+{createdAgent?.agentType === "markdown" ? markdownPreview : jsonPreview}
                 </pre>
               </div>
             </div>

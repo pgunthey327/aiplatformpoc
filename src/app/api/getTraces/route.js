@@ -6,13 +6,15 @@ export async function GET(request) {
         const agentName = searchParams.get("agentName");
         const agentId = searchParams.get("agentId");
         const version = searchParams.get("version");
+        const metadataAgentName = searchParams.get("metadataAgentName");
 
-        console.log({ agentName, agentId, version });
+        console.log({ agentName, agentId, version, metadataAgentName });
 
         const traces = await getAllTraces(
             agentName,
             agentId,
-            version
+            version,
+            metadataAgentName
         );
 
         return new Response(

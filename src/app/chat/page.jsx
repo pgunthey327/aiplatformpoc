@@ -17,7 +17,7 @@ const PROVIDER_MODELS = {
   OpenAI: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
   Anthropic: ["claude-opus-4-7", "claude-sonnet-4-6", "claude-haiku-4-5", "claude-3-5-sonnet-20241022"],
   Google: ["gemini-2.0-flash", "gemini-1.5-pro", "gemini-1.5-flash"],
-  Ollama: ["llama3.1", "llama3", "mistral", "codellama", "phi3", "qwen2"],
+  Ollama: ["llama3.1", "llama3", "mistral", "codellama", "phi3", "qwen2", "qwen3:0.6b"],
   Mistral: ["mistral-large-latest", "mistral-medium-latest", "mistral-small-latest", "mixtral-8x7b"],
   Cohere: ["command-r-plus", "command-r", "command-light"],
 };

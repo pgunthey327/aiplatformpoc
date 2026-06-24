@@ -32,6 +32,7 @@ export async function POST(req) {
             provider: body.provider,
             model: body.model,
             version: body.version,
+            agentType: body.agentType,
             createdAt: new Date().toISOString(),
         };
 

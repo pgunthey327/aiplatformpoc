@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { formatMessages } from "@/lib/traceUtils";
 
 export default function Page() {
   const { oid } = useParams();
@@ -199,7 +200,7 @@ export default function Page() {
 
         <CardContent>
           <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 text-sm">
-            {observation.input || "No input available"}
+            {formatMessages(observation.input) || "No input available"}
           </pre>
         </CardContent>
       </Card>
@@ -212,7 +213,7 @@ export default function Page() {
 
         <CardContent>
           <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 text-sm">
-            {observation.output || "No output available"}
+            {formatMessages(observation.output) || "No output available"}
           </pre>
         </CardContent>
       </Card>

@@ -6,9 +6,43 @@ const langfuse = new Langfuse({
   baseUrl: process.env.LANGFUSE_HOST, // only if self-hosted
 });
 
-export const getAllTraces = async (agentName, agentId, version) => {
+export const getAllTraces = async (agentName, agentId, version, metadataAgentName) => {
 
   try {
+    // External agent filter: use REST API to get full metadata, then filter across all known agent name locations
+    if (metadataAgentName) {
+      const auth = Buffer.from(
+        `${process.env.LANGFUSE_PUBLIC_KEY}:${process.env.LANGFUSE_SECRET_KEY}`
+      ).toString("base64");
+
+      const res = await fetch(`${process.env.LANGFUSE_HOST}/api/public/traces?limit=100`, {
+        headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) throw new Error(`Langfuse API error: ${res.status}`);
+
+      const raw = await res.json();
+      const needle = metadataAgentName.toLowerCase();
+
+      const filtered = (raw.data || []).filter((trace) => {
+        let meta = trace.metadata;
+        if (typeof meta === "string") { try { meta = JSON.parse(meta); } catch { meta = {}; } }
+
+        // 1. metadata.resourceAttributes.agentName (LangChain/OTel registered style)
+        if ((meta?.resourceAttributes?.agentName ?? "").toLowerCase().includes(needle)) return true;
+
+        // 2. metadata.attributes["gen_ai.agent.name"] (GitHub Copilot/OTel semantic style)
+        if ((meta?.attributes?.["gen_ai.agent.name"] ?? "").toLowerCase().includes(needle)) return true;
+
+        // 3. trace.name fallback ("invoke_agent GitHub Copilot Chat")
+        if ((trace.name ?? "").toLowerCase().includes(needle)) return true;
+
+        return false;
+      });
+
+      return { data: filtered };
+    }
+
     if (!agentName && !agentId && !version) {
       const result = await langfuse.fetchTraces({
         limit: 100,

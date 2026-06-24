@@ -16,7 +16,7 @@ export async function POST(req) {
   } = await req.json();
 
   const agent = agentConfig ?? {};
-  const model = selectedModel || agent.model || "llama3.1";
+  const model = selectedModel || agent.model || "qwen3:0.6b";
   const provider = selectedProvider || agent.provider || "ollama";
 
   const tags = [];
