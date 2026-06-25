@@ -108,5 +108,18 @@
     "version": "v1.0.0",
     "agentType": "markdown",
     "createdAt": "2026-06-24T20:19:17.338Z"
+  },
+  "test11|f1afa25c-a2fd-4d16-b9eb-5fb238f5c864|v1.0.0": {
+    "id": "f1afa25c-a2fd-4d16-b9eb-5fb238f5c864",
+    "agentName": "test11",
+    "description": "test11",
+    "tags": [
+      "test"
+    ],
+    "provider": "Ollama",
+    "model": "qwen3:0.6b",
+    "version": "v1.0.0",
+    "agentType": "code",
+    "createdAt": "2026-06-24T22:51:55.837Z"
   }
 }

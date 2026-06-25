@@ -10,6 +10,8 @@ import {
   Copy,
   Check,
   Code2,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -59,10 +61,15 @@ export default function Page() {
     agentType: "",
   });
 
+  const [prompts, setPrompts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [createdAgent, setCreatedAgent] = useState(null);
+
+  const addPrompt = () => setPrompts((p) => [...p, ""]);
+  const removePrompt = (idx) => setPrompts((p) => p.filter((_, i) => i !== idx));
+  const updatePrompt = (idx, val) => setPrompts((p) => p.map((v, i) => (i === idx ? val : v)));
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -125,6 +132,17 @@ export default function Page() {
       }
 
       setCreatedAgent(result.data);
+
+      // Store prompts in Langfuse if any were added
+      const nonEmpty = prompts.map((p) => p.trim()).filter(Boolean);
+      if (nonEmpty.length > 0) {
+        await fetch("/api/prompts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ agentName: payload.agentName, prompts: nonEmpty }),
+        });
+      }
+
       setShowDialog(true);
 
       setFormData({
@@ -136,6 +154,7 @@ export default function Page() {
         version: "",
         agentType: "",
       });
+      setPrompts([]);
     } catch (error) {
       console.error(error);
       alert(error.message);
@@ -313,7 +332,49 @@ export default function Page() {
                   </div>
                 </div>
 
-<div className="flex justify-end">
+                {/* Prompts section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="flex items-center gap-2">
+                      <FileText size={16} />
+                      Prompts
+                    </Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addPrompt}>
+                      <Plus size={14} className="mr-1" />
+                      Add Prompt
+                    </Button>
+                  </div>
+
+                  {prompts.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      No prompts added. Click "Add Prompt" to add one.
+                    </p>
+                  )}
+
+                  <div className="space-y-2">
+                    {prompts.map((p, idx) => (
+                      <div key={idx} className="flex gap-2 items-start">
+                        <textarea
+                          value={p}
+                          onChange={(e) => updatePrompt(idx, e.target.value)}
+                          placeholder={`Prompt ${idx + 1}…`}
+                          className="flex-1 min-h-20 rounded-md border bg-background px-3 py-2 text-sm resize-y"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePrompt(idx)}
+                          className="text-destructive hover:text-destructive mt-1"
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
                   <Button
                     type="submit"
                     disabled={loading}

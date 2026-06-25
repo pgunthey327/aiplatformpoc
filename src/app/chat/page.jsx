@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   Select,
@@ -12,6 +12,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const PROVIDER_MODELS = {
   OpenAI: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
@@ -30,6 +31,30 @@ export default function Page() {
 
   const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
+
+  const [agents, setAgents] = useState({});
+  const [selectedAgentName, setSelectedAgentName] = useState("");
+  const [agentPrompts, setAgentPrompts] = useState([]);
+  const [promptsLoading, setPromptsLoading] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/agents").then((r) => r.json()).then((r) => setAgents(r.data || {}));
+  }, []);
+
+  const agentNames = [...new Set(Object.values(agents).map((a) => a.agentName))];
+
+  const handleAgentSelect = async (name) => {
+    setSelectedAgentName(name);
+    setAgentPrompts([]);
+    setPromptsLoading(true);
+    try {
+      const res = await fetch(`/api/prompts?agentName=${encodeURIComponent(name)}`);
+      const result = await res.json();
+      setAgentPrompts(result.data || []);
+    } finally {
+      setPromptsLoading(false);
+    }
+  };
 
   const handleProviderChange = (val) => {
     setProvider(val);
@@ -83,6 +108,51 @@ export default function Page() {
         <h1 className="text-3xl font-bold">
           Test Your Agent
         </h1>
+
+        {/* Agent selector + prompts */}
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Select Agent</Label>
+            <Select value={selectedAgentName} onValueChange={handleAgentSelect}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select an agent to load its prompts" />
+              </SelectTrigger>
+              <SelectContent position="popper">
+                {agentNames.map((n) => (
+                  <SelectItem key={n} value={n}>{n}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {promptsLoading && (
+            <p className="text-sm text-muted-foreground">Loading prompts…</p>
+          )}
+
+          {!promptsLoading && agentPrompts.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Prompts</Label>
+              <div className="flex flex-wrap gap-2">
+                {agentPrompts.map((p, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setPrompt(p)}
+                    className="rounded-md border bg-muted px-3 py-1.5 text-sm text-left hover:bg-accent transition-colors max-w-xs truncate"
+                    title={p}
+                  >
+                    {p.length > 60 ? p.slice(0, 60) + "…" : p}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">Click a prompt to load it into the prompt box below.</p>
+            </div>
+          )}
+
+          {!promptsLoading && selectedAgentName && agentPrompts.length === 0 && (
+            <p className="text-sm text-muted-foreground">No prompts registered for this agent.</p>
+          )}
+        </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
