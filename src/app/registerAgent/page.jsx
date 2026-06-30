@@ -49,6 +49,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ShieldCheck } from "lucide-react";
+import { GUARDRAILS } from "@/lib/guardrails";
 
 export default function Page() {
   const [formData, setFormData] = useState({
@@ -59,6 +61,7 @@ export default function Page() {
     model: "",
     version: "",
     agentType: "",
+    guardrail: "none",
   });
 
   const [prompts, setPrompts] = useState([]);
@@ -143,6 +146,13 @@ export default function Page() {
         });
       }
 
+      // Store guardrail selection in Langfuse
+      await fetch("/api/guardrail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentName: payload.agentName, guardrail: payload.guardrail || "none" }),
+      });
+
       setShowDialog(true);
 
       setFormData({
@@ -153,6 +163,7 @@ export default function Page() {
         model: "",
         version: "",
         agentType: "",
+        guardrail: "none",
       });
       setPrompts([]);
     } catch (error) {
@@ -299,6 +310,36 @@ export default function Page() {
                         <SelectItem value="markdown">Markdown Based Agent</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="space-y-3 md:col-span-2">
+                    <Label className="flex items-center gap-2">
+                      <ShieldCheck size={16} />
+                      Guardrail
+                    </Label>
+
+                    <Select
+                      value={formData.guardrail}
+                      onValueChange={(val) => handleSelectChange("guardrail", val)}
+                    >
+                      <SelectTrigger className="h-12 w-full">
+                        <SelectValue placeholder="Select a guardrail (optional)" />
+                      </SelectTrigger>
+                      <SelectContent position="popper">
+                        <SelectItem value="none">None</SelectItem>
+                        {Object.entries(GUARDRAILS).map(([key, { label, description }]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    {formData.guardrail && formData.guardrail !== "none" && (
+                      <p className="text-xs text-muted-foreground">
+                        {GUARDRAILS[formData.guardrail]?.description}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-3 md:col-span-2">

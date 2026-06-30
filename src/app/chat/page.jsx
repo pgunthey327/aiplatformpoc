@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { GUARDRAILS, runGuardrail } from "@/lib/guardrails";
 
 const PROVIDER_MODELS = {
   OpenAI: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo"],
@@ -31,6 +32,8 @@ export default function Page() {
 
   const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
+  const [selectedGuardrail, setSelectedGuardrail] = useState("");
+  const [guardrailError, setGuardrailError] = useState("");
 
   const [agents, setAgents] = useState({});
   const [selectedAgentName, setSelectedAgentName] = useState("");
@@ -46,11 +49,19 @@ export default function Page() {
   const handleAgentSelect = async (name) => {
     setSelectedAgentName(name);
     setAgentPrompts([]);
+    setGuardrailError("");
     setPromptsLoading(true);
     try {
-      const res = await fetch(`/api/prompts?agentName=${encodeURIComponent(name)}`);
-      const result = await res.json();
-      setAgentPrompts(result.data || []);
+      const [promptsRes, guardrailRes] = await Promise.all([
+        fetch(`/api/prompts?agentName=${encodeURIComponent(name)}`),
+        fetch(`/api/guardrail?agentName=${encodeURIComponent(name)}`),
+      ]);
+      const promptsResult = await promptsRes.json();
+      const guardrailResult = await guardrailRes.json();
+      setAgentPrompts(promptsResult.data || []);
+      if (guardrailResult.success && guardrailResult.data) {
+        setSelectedGuardrail(guardrailResult.data);
+      }
     } finally {
       setPromptsLoading(false);
     }
@@ -63,6 +74,16 @@ export default function Page() {
 
   const handleSubmit = async () => {
     if (!prompt.trim()) return;
+
+    setGuardrailError("");
+
+    if (selectedGuardrail && selectedGuardrail !== "none") {
+      const result = runGuardrail(selectedGuardrail, prompt);
+      if (result.blocked) {
+        setGuardrailError(result.reason);
+        return;
+      }
+    }
 
     let agentConfig = null;
 
@@ -154,6 +175,33 @@ export default function Page() {
           )}
         </div>
 
+        {/* Guardrail selector */}
+        <div className="space-y-2">
+          <Label className="text-sm font-medium">Guardrail</Label>
+          <Select value={selectedGuardrail} onValueChange={(val) => { setSelectedGuardrail(val); setGuardrailError(""); }}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a guardrail (optional)" />
+            </SelectTrigger>
+            <SelectContent position="popper">
+              <SelectItem value="none">None</SelectItem>
+              {Object.entries(GUARDRAILS).map(([key, { label, description }]) => (
+                <SelectItem key={key} value={key}>
+                  <span className="font-medium">{label}</span>
+                  <span className="ml-2 text-xs text-muted-foreground hidden sm:inline">— {description}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedGuardrail && selectedGuardrail !== "none" && (
+            <p className="text-xs text-muted-foreground">
+              {GUARDRAILS[selectedGuardrail]?.description}
+              {selectedAgentName && (
+                <span className="ml-2 font-medium text-foreground/60">(loaded from agent config)</span>
+              )}
+            </p>
+          )}
+        </div>
+
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="text-sm font-medium">
@@ -241,6 +289,16 @@ export default function Page() {
         >
           {loading ? "Generating..." : "Send"}
         </Button>
+
+        {guardrailError && (
+          <div className="flex items-start gap-3 rounded-lg border border-destructive/60 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            <span className="mt-0.5 shrink-0 text-base">&#9888;</span>
+            <div>
+              <p className="font-semibold">Guardrail blocked your prompt</p>
+              <p className="mt-0.5">{guardrailError}</p>
+            </div>
+          </div>
+        )}
 
         {response && (
           <div className="rounded-lg border p-4">

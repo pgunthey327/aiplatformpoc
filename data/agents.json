@@ -121,5 +121,57 @@
     "version": "v1.0.0",
     "agentType": "code",
     "createdAt": "2026-06-24T22:51:55.837Z"
+  },
+  "AgentD|217dc272-e6b7-43ef-9a87-0d945460e2b7|v1.0.0": {
+    "id": "217dc272-e6b7-43ef-9a87-0d945460e2b7",
+    "agentName": "AgentD",
+    "description": "test guardrail and prompt library",
+    "tags": [
+      "coding"
+    ],
+    "provider": "Ollama",
+    "model": "qwen3:0.6b",
+    "version": "v1.0.0",
+    "agentType": "code",
+    "createdAt": "2026-06-25T05:48:16.288Z"
+  },
+  "AgentA|7f1f3291-70bb-40dd-b583-646406201209|v1.0.0": {
+    "id": "7f1f3291-70bb-40dd-b583-646406201209",
+    "agentName": "AgentA",
+    "description": "Lead Agent",
+    "tags": [
+      "coding"
+    ],
+    "provider": "GitHub Copilot",
+    "model": "claude-3-5-sonnet",
+    "version": "v1.0.0",
+    "agentType": "markdown",
+    "createdAt": "2026-06-25T05:57:36.123Z"
+  },
+  "AgentB|43d0c290-8574-45ec-99b5-294836b19501|v1.0.0": {
+    "id": "43d0c290-8574-45ec-99b5-294836b19501",
+    "agentName": "AgentB",
+    "description": "Subagent 1",
+    "tags": [
+      "coding"
+    ],
+    "provider": "GitHub Copilot",
+    "model": "claude-3-5-sonnet",
+    "version": "v1.0.0",
+    "agentType": "markdown",
+    "createdAt": "2026-06-25T05:58:20.854Z"
+  },
+  "AgentC|a61d5516-2fed-4565-b0bf-86c7c764a1fd|v1.0.0": {
+    "id": "a61d5516-2fed-4565-b0bf-86c7c764a1fd",
+    "agentName": "AgentC",
+    "description": "Subagent 3",
+    "tags": [
+      "coding"
+    ],
+    "provider": "GitHub Copilot",
+    "model": "claude-3-5-sonnet",
+    "version": "v1.0.0",
+    "agentType": "markdown",
+    "createdAt": "2026-06-25T05:59:00.226Z"
   }
 }
