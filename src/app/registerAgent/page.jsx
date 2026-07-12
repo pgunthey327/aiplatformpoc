@@ -69,12 +69,14 @@ export default function Page() {
   const [copied, setCopied] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [createdAgent, setCreatedAgent] = useState(null);
+  const [formError, setFormError] = useState("");
 
   const addPrompt = () => setPrompts((p) => [...p, ""]);
   const removePrompt = (idx) => setPrompts((p) => p.filter((_, i) => i !== idx));
   const updatePrompt = (idx, val) => setPrompts((p) => p.map((v, i) => (i === idx ? val : v)));
 
   const handleChange = (e) => {
+    if (e.target.name === "agentName" || e.target.name === "version") setFormError("");
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
@@ -106,6 +108,7 @@ export default function Page() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError("");
 
     try {
       setLoading(true);
@@ -153,6 +156,13 @@ export default function Page() {
         body: JSON.stringify({ agentName: payload.agentName, guardrail: payload.guardrail || "none" }),
       });
 
+      // Seed regression dataset in Langfuse with the registered prompts
+      await fetch("/api/datasets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agentName: payload.agentName, prompts: nonEmpty }),
+      });
+
       setShowDialog(true);
 
       setFormData({
@@ -168,7 +178,7 @@ export default function Page() {
       setPrompts([]);
     } catch (error) {
       console.error(error);
-      alert(error.message);
+      setFormError(error.message);
     } finally {
       setLoading(false);
     }
@@ -414,6 +424,12 @@ export default function Page() {
                     ))}
                   </div>
                 </div>
+
+                {formError && (
+                  <div className="rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    {formError}
+                  </div>
+                )}
 
                 <div className="flex justify-end">
                   <Button

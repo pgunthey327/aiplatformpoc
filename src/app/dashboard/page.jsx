@@ -7,6 +7,8 @@ import {
 } from "recharts";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TableTemplate } from "@/components/TableTemplate";
+import { TraceTreeView } from "@/components/TraceTreeView";
+import { TraceFlowGraph } from "@/components/TraceFlowGraph";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -19,6 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { extractInput } from "@/lib/traceUtils";
 
 // Pure helper — outside component so useMemo closures are always stable
 function getFieldValue(trace, field) {
@@ -72,6 +75,10 @@ export default function Page() {
   const [externalAgentName, setExternalAgentName] = useState("");
   const [sortConfig, setSortConfig] = useState({ field: "timestamp", direction: "desc" });
   const [filters, setFilters] = useState([]);
+  const [selectedTrace, setSelectedTrace] = useState(null);
+  const [traceDetails, setTraceDetails] = useState(null);
+  const [traceDetailsLoading, setTraceDetailsLoading] = useState(false);
+  const [depSubTab, setDepSubTab] = useState("tree");
 
   useEffect(() => {
     const loadAgents = async () => {
@@ -112,6 +119,20 @@ export default function Page() {
     } finally { setLoading(false); }
   };
 
+  const fetchTraceDetails = async (trace) => {
+    if (selectedTrace?.id === trace.id) return;
+    setSelectedTrace(trace);
+    setTraceDetails(null);
+    setTraceDetailsLoading(true);
+    try {
+      const res = await fetch(`/api/getTrace/${trace.id}`);
+      const result = await res.json();
+      setTraceDetails(result.data || null);
+    } finally {
+      setTraceDetailsLoading(false);
+    }
+  };
+
   const handleAgentSourceChange = (source) => {
     setAgentSource(source);
     setAgentName(""); setAgentId(""); setAgentVersion(""); setExternalAgentName("");
@@ -121,6 +142,7 @@ export default function Page() {
     setAgentName(""); setAgentId(""); setAgentVersion("");
     setExternalAgentName(""); setAgentSource("registered");
     setTraces([]); setShowSelector(true); setActiveTab("agent");
+    setSelectedTrace(null); setTraceDetails(null);
   };
 
   const addFilter    = (f)  => setFilters((p) => [...p, f]);
@@ -218,8 +240,9 @@ export default function Page() {
   const totalCost = providerData.reduce((s, p) => s + p.cost, 0).toFixed(6);
 
   const tabs = [
-    { id: "agent",  label: "Agent Metrics" },
-    { id: "model",  label: "Model & Provider" },
+    { id: "agent",      label: "Agent Metrics" },
+    { id: "model",      label: "Model & Provider" },
+    { id: "dependency", label: "Dependency View" },
   ];
 
   return (
@@ -438,6 +461,143 @@ export default function Page() {
 
           </div>
         )}
+        {/* ── Dependency View tab ── */}
+        {!loading && !showSelector && activeTab === "dependency" && (
+          <div className="flex h-[calc(100vh-3.5rem)] overflow-hidden">
+
+            {/* Left: trace list */}
+            <div className="w-72 shrink-0 border-r border-border overflow-y-auto">
+              <div className="p-3 border-b border-border sticky top-0 bg-card/90 backdrop-blur-md z-10">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  {filteredAndSortedTraces.length} trace{filteredAndSortedTraces.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+              <div className="divide-y divide-border/40">
+                {filteredAndSortedTraces.map((trace) => {
+                  const input = extractInput(trace.input);
+                  const isSelected = selectedTrace?.id === trace.id;
+                  return (
+                    <button
+                      key={trace.id}
+                      onClick={() => fetchTraceDetails(trace)}
+                      className={`w-full text-left px-3 py-2.5 hover:bg-muted/60 transition-colors ${
+                        isSelected ? "bg-primary/10 border-l-2 border-primary" : ""
+                      }`}
+                    >
+                      <p className="text-xs font-medium truncate text-foreground">
+                        {trace.name || "Unnamed trace"}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                        {input || trace.id}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                        {trace.timestamp ? new Date(trace.timestamp).toLocaleString() : ""}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right: dependency visualizations */}
+            <div className="flex-1 overflow-y-auto">
+              {!selectedTrace ? (
+                <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-2">
+                  <p className="text-sm">Select a trace on the left to view its dependency graph.</p>
+                </div>
+              ) : traceDetailsLoading ? (
+                <div className="flex justify-center items-center h-full"><Spinner /></div>
+              ) : (
+                <div className="p-5 space-y-5">
+                  {/* Trace header */}
+                  <div>
+                    <h2 className="text-base font-semibold">{selectedTrace.name || "Unnamed trace"}</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5 break-all">ID: {selectedTrace.id}</p>
+                  </div>
+
+                  {/* Sub-tab toggle: Tree / Graph */}
+                  <div className="flex gap-1 rounded-md border border-border p-1 w-fit">
+                    {[
+                      { id: "tree",  label: "Dependency Tree" },
+                      { id: "graph", label: "Flow Graph" },
+                    ].map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => setDepSubTab(s.id)}
+                        className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                          depSubTab === s.id
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Tree view */}
+                  {depSubTab === "tree" && (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Observation Hierarchy</CardTitle>
+                        <p className="text-xs text-muted-foreground">
+                          Each node is a span or LLM call recorded within this trace. Click to expand/collapse.
+                        </p>
+                      </CardHeader>
+                      <CardContent>
+                        <TraceTreeView observations={traceDetails?.observations ?? []} />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Flow graph */}
+                  {depSubTab === "graph" && (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Call Flow Graph</CardTitle>
+                        <p className="text-xs text-muted-foreground">
+                          Directed graph showing the parent → child call order of all spans.
+                        </p>
+                      </CardHeader>
+                      <CardContent className="overflow-x-auto">
+                        <TraceFlowGraph observations={traceDetails?.observations ?? []} />
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Stats summary */}
+                  {traceDetails?.observations?.length > 0 && (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-sm">Observation Summary</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          {Object.entries(
+                            traceDetails.observations.reduce((acc, o) => {
+                              acc[o.type ?? "UNKNOWN"] = (acc[o.type ?? "UNKNOWN"] || 0) + 1;
+                              return acc;
+                            }, {})
+                          ).map(([type, count]) => (
+                            <div key={type} className="border rounded-lg p-3">
+                              <p className="text-xs text-muted-foreground">{type}</p>
+                              <p className="text-xl font-bold mt-1">{count}</p>
+                            </div>
+                          ))}
+                          <div className="border rounded-lg p-3">
+                            <p className="text-xs text-muted-foreground">Total Spans</p>
+                            <p className="text-xl font-bold mt-1">{traceDetails.observations.length}</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
       </SidebarInset>
     </SidebarProvider>
   );

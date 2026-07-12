@@ -20,6 +20,18 @@ export async function POST(req) {
             agents = {};
         }
 
+        const duplicate = Object.keys(agents).some((k) => {
+            const parts = k.split("|");
+            return parts[0] === body.agentName && parts[2] === body.version;
+        });
+
+        if (duplicate) {
+            return Response.json(
+                { success: false, message: `Agent "${body.agentName}" version "${body.version}" is already registered.` },
+                { status: 409 }
+            );
+        }
+
         const id = crypto.randomUUID();
 
         const key = `${body.agentName}|${id}|${body.version}`;

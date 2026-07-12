@@ -126,4 +126,17 @@ export const getTraceByObservationId = async (obsId) => {
   }
 };
 
+export const getFullTrace = async (traceId) => {
+  const auth = Buffer.from(
+    `${process.env.LANGFUSE_PUBLIC_KEY}:${process.env.LANGFUSE_SECRET_KEY}`
+  ).toString("base64");
+
+  const res = await fetch(`${process.env.LANGFUSE_HOST}/api/public/traces/${traceId}`, {
+    headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+  });
+
+  if (!res.ok) throw new Error(`Langfuse API error: ${res.status}`);
+  return res.json();
+};
+
 // module.exports = { getAllTraces, getTraceByObservationId }

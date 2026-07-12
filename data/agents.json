@@ -173,5 +173,44 @@
     "version": "v1.0.0",
     "agentType": "markdown",
     "createdAt": "2026-06-25T05:59:00.226Z"
+  },
+  "AgentN|297dde0a-22a8-4949-ad22-18cb1746e04b|v1.0.0": {
+    "id": "297dde0a-22a8-4949-ad22-18cb1746e04b",
+    "agentName": "AgentN",
+    "description": "test",
+    "tags": [
+      "test"
+    ],
+    "provider": "Ollama",
+    "model": "qwen3:0.6b",
+    "version": "v1.0.0",
+    "agentType": "code",
+    "createdAt": "2026-07-09T05:34:28.156Z"
+  },
+  "AgentM|6a3cf9cb-aadf-494a-93bf-02c23f9fd616|v1.0.0": {
+    "id": "6a3cf9cb-aadf-494a-93bf-02c23f9fd616",
+    "agentName": "AgentM",
+    "description": "test dataset",
+    "tags": [
+      "test"
+    ],
+    "provider": "Ollama",
+    "model": "qwen3:0.6b",
+    "version": "v1.0.0",
+    "agentType": "code",
+    "createdAt": "2026-07-09T06:06:11.451Z"
+  },
+  "AgentO|da939af2-c9c5-488a-bdd9-4131dde0d673|v1.0.0": {
+    "id": "da939af2-c9c5-488a-bdd9-4131dde0d673",
+    "agentName": "AgentO",
+    "description": "test agent",
+    "tags": [
+      "test"
+    ],
+    "provider": "Ollama",
+    "model": "qwen3:0.6b",
+    "version": "v1.0.0",
+    "agentType": "code",
+    "createdAt": "2026-07-09T06:26:52.705Z"
   }
 }
